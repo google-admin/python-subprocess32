@@ -1,7 +1,13 @@
-"""When ran as a script, simulates cat with no arguments."""
+"""When ran as a script, simulates cat."""
 
 import sys
 
 if __name__ == "__main__":
-    for line in sys.stdin:
-        sys.stdout.write(line)
+    if len(sys.argv) == 1:
+        files = [sys.stdin]
+    else:
+        files = (sys.stdin if f == '-' else open(f) for f in sys.argv[1:])
+    for infile in files:
+        with infile:
+            for line in infile:
+                sys.stdout.write(line)

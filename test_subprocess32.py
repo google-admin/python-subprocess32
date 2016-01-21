@@ -1865,7 +1865,6 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertFalse(remaining_fds & open_fds,
                          msg="Some fds were left open.")
 
-
     def test_pass_fds(self):
         fd_status = test_support.findfile("testdata/fd_status.py")
 
@@ -1896,6 +1895,22 @@ class POSIXProcessTestCase(BaseTestCase):
             #            [sys.executable, "-c", "import sys; sys.exit(0)"],
             #            close_fds=False, pass_fds=(fd, )))
             #self.assertIn('overriding close_fds', str(context.warning))
+
+    def test_pass_fds_clears_close_on_exec(self):
+        qcat = test_support.findfile("testdata/qcat.py")
+        p1 = subprocess.Popen(
+            [sys.executable, '-c', 'import sys; sys.stdout.write("hi")'],
+            stdout=subprocess.PIPE
+        )
+        p2 = subprocess.Popen(
+
+            [sys.executable, qcat, '/dev/fd/{0}'.format(p1.stdout.fileno())],
+            stdout=subprocess.PIPE,
+            pass_fds=(p1.stdout.fileno(),)
+        )
+        output, ignored = p2.communicate()
+        self.assertEqual('hi', output)
+
 
     def test_stdout_stdin_are_single_inout_fd(self):
         inout = open(os.devnull, "r+")
