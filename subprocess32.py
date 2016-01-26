@@ -414,19 +414,30 @@ import traceback
 import gc
 import signal
 
+
 # Exception classes used by this module.
-class CalledProcessError(Exception):
-    """This exception is raised when a process run by check_call() or
-    check_output() returns a non-zero exit status.
-    The exit status will be stored in the returncode attribute;
-    check_output() will also store the output in the output attribute.
-    """
-    def __init__(self, returncode, cmd, output=None):
-        self.returncode = returncode
-        self.cmd = cmd
-        self.output = output
-    def __str__(self):
-        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
+try:
+    # For compatibility with subprocess try to use the original exception
+    # class.
+    from subprocess import CalledProcessError
+except ImportError:
+    # In case this module was installed as subprocess as suggested in
+    # README.md the import above will refer to this module, therefore the
+    # CalledProcessError is not defined yet.
+
+    class CalledProcessError(Exception):
+        """This exception is raised when a process run by check_call() or
+        check_output() returns a non-zero exit status.
+        The exit status will be stored in the returncode attribute;
+        check_output() will also store the output in the output attribute.
+        """
+        def __init__(self, returncode, cmd, output=None):
+            self.returncode = returncode
+            self.cmd = cmd
+            self.output = output
+        def __str__(self):
+            return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
 
 
 class TimeoutExpired(Exception):
@@ -712,7 +723,13 @@ def list2cmdline(seq):
 _PLATFORM_DEFAULT_CLOSE_FDS = object()
 
 
-class Popen(object):
+try:
+    from subprocess import Popen as _PopenBase
+except ImportError:
+    _PopenBase = object
+
+
+class Popen(_PopenBase):
     def __init__(self, args, bufsize=0, executable=None,
                  stdin=None, stdout=None, stderr=None,
                  preexec_fn=None, close_fds=_PLATFORM_DEFAULT_CLOSE_FDS,
