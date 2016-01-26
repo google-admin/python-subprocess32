@@ -2139,6 +2139,25 @@ class ContextManagerTests(BaseTestCase):
             self.fail("Expected an EnvironmentError exception.")
 
 
+class CompatibilityTests(BaseTestCase):
+
+    def test_compatible_types(self):
+        """
+        To allow for interoperability all classes in subprocess32 should
+        be subclasses of the stock subprocess classes.
+        """
+        import subprocess as stock_subprocess
+        if stock_subprocess is subprocess32:
+            self.skipTest("subprocess32 is installed as stock subprocess")
+
+        for name in dir(subprocess32):
+            new_value = getattr(subprocess32, name)
+            old_value = getattr(subprocess, name, None)
+            if old_value is not None and isinstance(old_value, type):
+                assert issubclass(new_value, old_value), \
+                       "Incompatible type vs. stock subprocess: {0}".format(name)
+
+
 if sys.version_info[:2] <= (2,4):
     # The test suite hangs during the pure python test on 2.4.  No idea why.
     # That is not the implementation anyone is using this module for anyways.
@@ -2153,7 +2172,8 @@ def test_main():
                   ProcessTestCasePOSIXPurePython,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
-                  ContextManagerTests)
+                  ContextManagerTests,
+                  CompatibilityTests)
 
     test_support.run_unittest(*unit_tests)
     reap_children()
