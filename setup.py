@@ -19,7 +19,7 @@ def main():
 
     setup(
       name='subprocess32',
-      version='3.2.7+scale1',
+      version='3.2.7+scale2',
       description='A backport of the subprocess module from Python 3.2/3.3 for use on 2.x.',
       long_description="""
 This is a backport of the subprocess standard library module from
