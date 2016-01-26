@@ -2157,6 +2157,22 @@ class CompatibilityTests(BaseTestCase):
                 assert issubclass(new_value, old_value), \
                        "Incompatible type vs. stock subprocess: {0}".format(name)
 
+    def test_completeness(self):
+        """
+        Each name in subprocess exists in subprocess32 as well.
+        """
+        import subprocess as stock_subprocess
+        if stock_subprocess is subprocess32:
+            self.skipTest("subprocess32 is installed as stock subprocess")
+
+        missing_names = set(dir(stock_subprocess)) - set(dir(subprocess32))
+
+        # Nobody in their right mind would call the _demo functions from outside
+        missing_names -= set(["_demo_posix", "_demo_windows"])
+
+        assert not missing_names, \
+                "Missing in subprocess32: {0}".format(missing_names)
+
 
 if sys.version_info[:2] <= (2,4):
     # The test suite hangs during the pure python test on 2.4.  No idea why.
