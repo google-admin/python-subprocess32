@@ -1413,7 +1413,7 @@ class Popen(_PopenBase):
                 try:
 
                     if _posixsubprocess:
-                        fs_encoding = sys.getfilesystemencoding()
+                        fs_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
                         def fs_encode(s):
                             """Encode s for use in the env, fs or cmdline."""
                             if isinstance(s, str):
