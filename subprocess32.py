@@ -403,10 +403,13 @@ except that:
   close_fds=True with subprocess.Popen.
 """
 
+import os
+if os.name != "posix":
+    raise RuntimeError("This module is not compatible with non-posix systems")
+
 import sys
 mswindows = (sys.platform == "win32")
 
-import os
 import exceptions
 import types
 import time
