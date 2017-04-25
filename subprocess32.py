@@ -1141,12 +1141,13 @@ class Popen(object):
             attribute."""
             if endtime is not None:
                 timeout = self._remaining_time(endtime)
+            # actual timeout is milliseconds, use timeout as the printable value
             if timeout is None:
-                timeout = _subprocess.INFINITE
+                timeout_millis = _subprocess.INFINITE
             else:
-                timeout = int(timeout * 1000)
+                timeout_millis = int(timeout * 1000)
             if self.returncode is None:
-                result = _subprocess.WaitForSingleObject(self._handle, timeout)
+                result = _subprocess.WaitForSingleObject(self._handle, timeout_millis)
                 if result == _WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
                 self.returncode = _subprocess.GetExitCodeProcess(self._handle)
@@ -1187,11 +1188,11 @@ class Popen(object):
             if self.stdout is not None:
                 self.stdout_thread.join(self._remaining_time(endtime))
                 if self.stdout_thread.isAlive():
-                    raise TimeoutExpired(self.args)
+                    raise TimeoutExpired(self.args, orig_timeout)
             if self.stderr is not None:
                 self.stderr_thread.join(self._remaining_time(endtime))
                 if self.stderr_thread.isAlive():
-                    raise TimeoutExpired(self.args)
+                    raise TimeoutExpired(self.args, orig_timeout)
 
             # Collect the output from and close both pipes, now that we know
             # both have been read successfully.
