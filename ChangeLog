@@ -2,6 +2,9 @@
 2016-??-?? 3.2.8
 -----------------
 
+* Fix subprocess.Popen.wait() when the child process has exited to a
+  a stopped instead of terminated state (ex: when under ptrace).
+  https://bugs.python.org/issue29335 
 * Fix a compilation issue regarding O_CLOEXEC not being defined on old
   Linux distros such as RHEL 5.
 

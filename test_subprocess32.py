@@ -3,6 +3,12 @@ from test import test_support
 import subprocess32
 subprocess = subprocess32
 import sys
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+else:
+    import ctypes.util
 import signal
 import os
 import errno
@@ -1835,6 +1841,46 @@ class POSIXProcessTestCase(BaseTestCase):
         remaining_fds = set(map(int, output.split(',')))
 
         self.assertNotIn(fd, remaining_fds)
+
+    def test_child_terminated_in_stopped_state(self):
+        """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
+        if not ctypes:
+            sys.stderr.write('ctypes module required.\n')
+            return
+        if not sys.executable:
+            self.stderr.write('Test requires sys.executable.\n')
+            return
+        PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
+        libc_name = ctypes.util.find_library('c')
+        libc = ctypes.CDLL(libc_name)
+        if not hasattr(libc, 'ptrace'):
+            self.stderr.write('ptrace() required.\n')
+            return
+        test_ptrace = subprocess.Popen(
+            [sys.executable, '-c', """if True:
+             import ctypes
+             libc = ctypes.CDLL({libc_name!r})
+             libc.ptrace({PTRACE_TRACEME}, 0, 0)
+             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
+            ])
+        if test_ptrace.wait() != 0:
+            sys.stderr.write('ptrace() failed - unable to test.\n')
+            return
+        child = subprocess.Popen(
+            [sys.executable, '-c', """if True:
+             import ctypes
+             libc = ctypes.CDLL({libc_name!r})
+             libc.ptrace({PTRACE_TRACEME}, 0, 0)
+             libc.printf(ctypes.c_char_p(0xdeadbeef))  # Crash the process.
+             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
+            ])
+        try:
+            returncode = child.wait()
+        except Exception, e:
+            child.kill()  # Clean up the hung stopped process.
+            raise e
+        self.assertNotEqual(0, returncode)
+        self.assertLess(returncode, 0)  # signal death, likely SIGSEGV.
 
 
 if mswindows:
