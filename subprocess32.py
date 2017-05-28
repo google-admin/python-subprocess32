@@ -222,6 +222,36 @@ PIPE = -1
 STDOUT = -2
 DEVNULL = -3
 
+# This function is only used by multiprocessing, it is here so that people
+# can drop subprocess32 in as a replacement for the stdlib subprocess module.
+
+def _args_from_interpreter_flags():
+    """Return a list of command-line arguments reproducing the current
+    settings in sys.flags and sys.warnoptions."""
+    flag_opt_map = {
+        'debug': 'd',
+        # 'inspect': 'i',
+        # 'interactive': 'i',
+        'optimize': 'O',
+        'dont_write_bytecode': 'B',
+        'no_user_site': 's',
+        'no_site': 'S',
+        'ignore_environment': 'E',
+        'verbose': 'v',
+        'bytes_warning': 'b',
+        'py3k_warning': '3',
+    }
+    args = []
+    for flag, opt in flag_opt_map.items():
+        v = getattr(sys.flags, flag)
+        if v > 0:
+            args.append('-' + opt * v)
+    if getattr(sys.flags, 'hash_randomization') != 0:
+        args.append('-R')
+    for opt in sys.warnoptions:
+        args.append('-W' + opt)
+    return args
+
 
 def _eintr_retry_call(func, *args):
     while True:

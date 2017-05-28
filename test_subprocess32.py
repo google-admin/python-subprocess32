@@ -2269,6 +2269,14 @@ class HelperFunctionTests(unittest.TestCase):
         # Supplied PATH environment variable
         self.assertSequenceEqual(test_path, get_exec_path(test_env))
 
+    def test_args_from_interpreter_flags(self):
+        if sys.version_info[:2] < (2,6):
+            print "Skipped - only useful on 2.6 and higher."
+            return
+        # Mostly just to call it for code coverage.
+        args_list = subprocess32._args_from_interpreter_flags()
+        self.assertTrue(isinstance(args_list, list), msg=repr(args_list))
+
 
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes

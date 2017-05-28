@@ -9,7 +9,10 @@
 * Fix subprocess.Popen.wait() when the child process has exited to a
   a stopped instead of terminated state (ex: when under ptrace).
   https://bugs.python.org/issue29335 
-* Fix a compilation issue regarding O_CLOEXEC not being defined on old
+* Include the private API needed by the multiprocessing module for people who
+  want to drop subprocess32 in as a replacement for their standard library
+  subprocess module.
+* Fix a compilation issue regarding O_CLOEXEC not being defined on ancient
   Linux distros such as RHEL 5.
 
 -----------------
