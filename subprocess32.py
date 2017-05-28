@@ -220,6 +220,7 @@ def _cleanup():
 
 PIPE = -1
 STDOUT = -2
+DEVNULL = -3
 
 
 def _eintr_retry_call(func, *args):
@@ -612,6 +613,8 @@ class Popen(object):
                         to_close.append(c2pwrite)
                     if stderr == PIPE:
                         to_close.append(errwrite)
+                    if hasattr(self, '_devnull'):
+                        to_close.append(self._devnull)
                     for fd in to_close:
                         try:
                             os.close(fd)
@@ -649,6 +652,12 @@ class Popen(object):
         if self.returncode is None and _active is not None:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
+
+
+    def _get_devnull(self):
+        if not hasattr(self, '_devnull'):
+            self._devnull = os.open(os.devnull, os.O_RDWR)
+        return self._devnull
 
 
     def communicate(self, input=None, timeout=None):
@@ -739,6 +748,8 @@ class Popen(object):
                     p2cread, _ = _subprocess.CreatePipe(None, 0)
             elif stdin == PIPE:
                 p2cread, p2cwrite = _subprocess.CreatePipe(None, 0)
+            elif stdin == DEVNULL:
+                p2cread = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stdin, int):
                 p2cread = msvcrt.get_osfhandle(stdin)
             else:
@@ -752,6 +763,8 @@ class Popen(object):
                     _, c2pwrite = _subprocess.CreatePipe(None, 0)
             elif stdout == PIPE:
                 c2pread, c2pwrite = _subprocess.CreatePipe(None, 0)
+            elif stdout == DEVNULL:
+                c2pwrite = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stdout, int):
                 c2pwrite = msvcrt.get_osfhandle(stdout)
             else:
@@ -767,6 +780,8 @@ class Popen(object):
                 errread, errwrite = _subprocess.CreatePipe(None, 0)
             elif stderr == STDOUT:
                 errwrite = c2pwrite
+            elif stderr == DEVNULL:
+                errwrite = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stderr, int):
                 errwrite = msvcrt.get_osfhandle(stderr)
             else:
@@ -877,6 +892,8 @@ class Popen(object):
                     c2pwrite.Close()
                 if errwrite != -1:
                     errwrite.Close()
+                if hasattr(self, '_devnull'):
+                    os.close(self._devnull)
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1026,6 +1043,8 @@ class Popen(object):
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = _create_pipe()
+            elif stdin == DEVNULL:
+                p2cread = self._get_devnull()
             elif isinstance(stdin, int):
                 p2cread = stdin
             else:
@@ -1036,6 +1055,8 @@ class Popen(object):
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = _create_pipe()
+            elif stdout == DEVNULL:
+                c2pwrite = self._get_devnull()
             elif isinstance(stdout, int):
                 c2pwrite = stdout
             else:
@@ -1047,7 +1068,12 @@ class Popen(object):
             elif stderr == PIPE:
                 errread, errwrite = _create_pipe()
             elif stderr == STDOUT:
-                errwrite = c2pwrite
+                if c2pwrite != -1:
+                    errwrite = c2pwrite
+                else: # child's stdout is not set, use parent's stdout
+                    errwrite = sys.__stdout__.fileno()
+            elif stderr == DEVNULL:
+                errwrite = self._get_devnull()
             elif isinstance(stderr, int):
                 errwrite = stderr
             else:
@@ -1286,12 +1312,16 @@ class Popen(object):
 
                 # A pair of non -1s means we created both fds and are
                 # responsible for closing them.
-                if p2cread != -1 and p2cwrite != -1:
+                # self._devnull is not always defined.
+                devnull_fd = getattr(self, '_devnull', None)
+                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
                     os.close(p2cread)
-                if c2pwrite != -1 and c2pread != -1:
+                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
                     os.close(c2pwrite)
-                if errwrite != -1 and errread != -1:
+                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
                     os.close(errwrite)
+                if devnull_fd is not None:
+                    os.close(devnull_fd)
                 # Prevent a double close of these fds from __init__ on error.
                 self._closed_child_pipe_fds = True
 

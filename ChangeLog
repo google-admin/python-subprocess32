@@ -3,6 +3,9 @@
 -----------------
 
 * Backport the new subprocess.run() API from Python 3.5.
+* Backport subprocess.DEVNULL support from 3.3.
+* Allow stderr to be redirected to stdout even when stdout is not redirected.
+  https://bugs.python.org/issue22274 
 * Fix subprocess.Popen.wait() when the child process has exited to a
   a stopped instead of terminated state (ex: when under ptrace).
   https://bugs.python.org/issue29335 

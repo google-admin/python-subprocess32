@@ -479,6 +479,27 @@ class ProcessTestCase(BaseTestCase):
         tf.seek(0)
         self.assertStderrEqual(tf.read(), "strawberry")
 
+    def test_stderr_redirect_with_no_stdout_redirect(self):
+        # test stderr=STDOUT while stdout=None (not set)
+
+        # - grandchild prints to stderr
+        # - child redirects grandchild's stderr to its stdout
+        # - the parent should get grandchild's stderr in child's stdout
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys, subprocess32 as subprocess;'
+                              'rc = subprocess.call([sys.executable, "-c",'
+                              '    "import sys;"'
+                              '    "sys.stderr.write(\'42\')"],'
+                              '    stderr=subprocess.STDOUT);'
+                              'sys.exit(rc)'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        #NOTE: stdout should get stderr from grandchild
+        self.assertStderrEqual(stdout, '42')
+        self.assertStderrEqual(stderr, '') # should be empty
+        self.assertEqual(p.returncode, 0)
+
     def test_stdout_stderr_pipe(self):
         # capture stdout and stderr to the same pipe
         p = subprocess.Popen([sys.executable, "-c",
@@ -522,6 +543,31 @@ class ProcessTestCase(BaseTestCase):
         out, err = p.communicate()
         self.assertEqual(p.returncode, 0, err)
         self.assertEqual(out.rstrip(), 'test with stdout=1')
+
+    def test_stdout_devnull(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'for i in range(10240):'
+                              'print("x" * 1024)'],
+                              stdout=subprocess.DEVNULL)
+        p.wait()
+        self.assertEqual(p.stdout, None)
+
+    def test_stderr_devnull(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys\n'
+                              'for i in range(10240):'
+                              'sys.stderr.write("x" * 1024)'],
+                              stderr=subprocess.DEVNULL)
+        p.wait()
+        self.assertEqual(p.stderr, None)
+
+    def test_stdin_devnull(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys;'
+                              'sys.stdin.read(1)'],
+                              stdin=subprocess.DEVNULL)
+        p.wait()
+        self.assertEqual(p.stdin, None)
 
     def test_env(self):
         newenv = os.environ.copy()
@@ -1991,7 +2037,7 @@ class POSIXProcessTestCase(BaseTestCase):
             child.kill()  # Clean up the hung stopped process.
             raise e
         self.assertNotEqual(0, returncode)
-        self.assertLess(returncode, 0)  # signal death, likely SIGSEGV.
+        self.assert_(returncode < 0, msg=repr(returncode))  # signal death, likely SIGSEGV.
 
 
 if mswindows:
