@@ -584,17 +584,28 @@ class ProcessTestCase(BaseTestCase):
             p.__exit__(None, None, None)
 
     def test_empty_env(self):
-        # Note: This excludes some __CF_* and VERSIONER_* keys OS X insists
-        # on adding even when the environment in exec is empty.
+        """test_empty_env() - verify that env={} is as empty as possible."""
+
+        def is_env_var_to_ignore(var_name):
+            """Determine if an environment variable is under our control."""
+            # This excludes some __CF_* and VERSIONER_* keys MacOS insists
+            # on adding even when the environment in exec is empty.
+            # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
+            return ('VERSIONER' in k or '__CF' in k or  # MacOS
+                    k == 'LD_PRELOAD' or k.startswith('SANDBOX'))  # Gentoo
+
         p = subprocess.Popen(
-                [sys.executable, "-c",
-                 'import os; '
-                 'print([k for k in os.environ.keys() '
-                 '       if ("VERSIONER" not in k and "__CF" not in k)])'],
+                [sys.executable, '-c',
+                 'import os; print(list(os.environ.keys()))'],
                 stdout=subprocess.PIPE, env={})
         try:
             stdout, stderr = p.communicate()
-            self.assertEqual(stdout.strip(), "[]")
+            child_env_names = eval(stdout.strip())
+            self.assertTrue(isinstance(child_env_names, list),
+                            msg=repr(child_env_names))
+            child_env_names = [k for k in child_env_names
+                               if not is_env_var_to_ignore(k)]
+            self.assertEqual(child_env_names, [])
         finally:
             p.__exit__(None, None, None)
 
