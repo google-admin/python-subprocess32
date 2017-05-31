@@ -27,6 +27,11 @@
 #include <dirent.h>
 #endif
 
+/* Older OSes doesn't support PIPE2 if O_CLOEXEC is not defined */
+#ifndef O_CLOEXEC
+# undef HAVE_PIPE2
+#endif
+
 #if defined(__ANDROID__) && !defined(SYS_getdents64)
 /* Android doesn't expose syscalls, add the definition manually. */
 # include <sys/linux-syscalls.h>
