@@ -41,10 +41,13 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
     then returns a (status, output) tuple
 """
 
+import os
+if os.name != "posix":
+    raise RuntimeError("This module is not compatible with non-posix systems")
+
 import sys
 mswindows = (sys.platform == "win32")
 
-import os
 import exceptions
 import types
 import time
