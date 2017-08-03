@@ -291,7 +291,7 @@ def call(*popenargs, **kwargs):
     p = Popen(*popenargs, **kwargs)
     try:
         return p.wait(timeout=timeout)
-    except TimeoutExpired:
+    except:
         p.kill()
         p.wait()
         raise
