@@ -1,8 +1,11 @@
 os: linux
 language: python
 python:
+  - "2.6"
   - "2.7"
 install:
   - pip install .
 script:
-  - python -m unittest discover
+  - python test_subprocess32.py
+# Python 2.6 does not have test discovery.
+#  - python -m unittest discover
