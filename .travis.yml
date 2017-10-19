@@ -1,11 +1,11 @@
 language: python
+os: linux
 # Each attribute in the matrix will override the global attribute.
 matrix:
   include:
-    - os: linux
-      - python: 2.6
-        env: LANG=C
-      - python: 2.7
+    - python: 2.6
+      env: LANG=C
+    - python: 2.7
     - os: osx
 install:
   - pip install .
