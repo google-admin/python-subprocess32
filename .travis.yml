@@ -1,3 +1,4 @@
+os: linux
 language: python
 python:
   - "2.7"
@@ -5,7 +6,3 @@ install:
   - pip install .
 script:
   - python -m unittest discover
-matrix:
-  include:
-    os: linux
-    os: osx
