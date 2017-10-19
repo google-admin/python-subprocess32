@@ -2,10 +2,15 @@ language: python
 os: linux
 # Each attribute in the matrix will override the global attribute.
 matrix:
+  fast_finish: true
+  allow_failures:
+    - env: OPTIONAL=true
   include:
     - python: 2.6
     - python: 2.7
     - os: osx
+      # MacOS is super high latency to execute on Travis CI, don't wait.
+      env: OPTIONAL=true
 install:
   - pip install .
 script:
