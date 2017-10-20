@@ -15,7 +15,7 @@ matrix:
       # Just check that the dummy shim installs and works on 3.x.
       script: |
         cd /  # We cannot be in the directory with subprocess32.py in it.
-        python -c 'import os, subprocess32, sys; print(os.getcwd()); print(subprocess32); sys.exit(subprocess32 is not subprocess)'
+        python -c 'import os, subprocess32, subprocess, sys; print("working directory:", os.getcwd()); print("subprocess32 module is", subprocess32); sys.exit(subprocess32 is not subprocess)'
     - os: osx
       # Travis does not have a Python runtime for MacOS.
       #  https://pythonhosted.org/CodeChat/.travis.yml.html
