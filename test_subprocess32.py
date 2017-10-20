@@ -306,58 +306,57 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
 
-    #@unittest.skipIf(mswindows, "pending resolution of issue #15533")
-    def test_cwd_with_relative_arg(self):
-        # Check that Popen looks for args[0] relative to cwd if args[0]
-        # is relative.
-        python_dir, python_base = self._split_python_path()
-        rel_python = os.path.join(os.curdir, python_base)
+    if not mswindows:  # pending resolution of issue #15533
+        def test_cwd_with_relative_arg(self):
+            # Check that Popen looks for args[0] relative to cwd if args[0]
+            # is relative.
+            python_dir, python_base = self._split_python_path()
+            rel_python = os.path.join(os.curdir, python_base)
 
-        path = 'tempcwd'
-        saved_dir = os.getcwd()
-        os.mkdir(path)
-        try:
-            os.chdir(path)
-            wrong_dir = os.getcwd()
-            # Before calling with the correct cwd, confirm that the call fails
-            # without cwd and with the wrong cwd.
-            self.assertRaises(OSError, subprocess.Popen,
-                              [rel_python])
-            self.assertRaises(OSError, subprocess.Popen,
-                              [rel_python], cwd=wrong_dir)
-            python_dir = self._normalize_cwd(python_dir)
-            self._assert_cwd(python_dir, rel_python, cwd=python_dir)
-        finally:
-            os.chdir(saved_dir)
-            shutil.rmtree(path)
+            path = 'tempcwd'
+            saved_dir = os.getcwd()
+            os.mkdir(path)
+            try:
+                os.chdir(path)
+                wrong_dir = os.getcwd()
+                # Before calling with the correct cwd, confirm that the call fails
+                # without cwd and with the wrong cwd.
+                self.assertRaises(OSError, subprocess.Popen,
+                                  [rel_python])
+                self.assertRaises(OSError, subprocess.Popen,
+                                  [rel_python], cwd=wrong_dir)
+                python_dir = self._normalize_cwd(python_dir)
+                self._assert_cwd(python_dir, rel_python, cwd=python_dir)
+            finally:
+                os.chdir(saved_dir)
+                shutil.rmtree(path)
 
-    #@unittest.skipIf(mswindows, "pending resolution of issue #15533")
-    def test_cwd_with_relative_executable(self):
-        # Check that Popen looks for executable relative to cwd if executable
-        # is relative (and that executable takes precedence over args[0]).
-        python_dir, python_base = self._split_python_path()
-        rel_python = os.path.join(os.curdir, python_base)
-        doesntexist = "somethingyoudonthave"
+        def test_cwd_with_relative_executable(self):
+            # Check that Popen looks for executable relative to cwd if executable
+            # is relative (and that executable takes precedence over args[0]).
+            python_dir, python_base = self._split_python_path()
+            rel_python = os.path.join(os.curdir, python_base)
+            doesntexist = "somethingyoudonthave"
 
-        path = 'tempcwd'
-        saved_dir = os.getcwd()
-        os.mkdir(path)
-        try:
-            os.chdir(path)
-            wrong_dir = os.getcwd()
-            # Before calling with the correct cwd, confirm that the call fails
-            # without cwd and with the wrong cwd.
-            self.assertRaises(OSError, subprocess.Popen,
-                              [doesntexist], executable=rel_python)
-            self.assertRaises(OSError, subprocess.Popen,
-                              [doesntexist], executable=rel_python,
-                              cwd=wrong_dir)
-            python_dir = self._normalize_cwd(python_dir)
-            self._assert_cwd(python_dir, doesntexist, executable=rel_python,
-                             cwd=python_dir)
-        finally:
-            os.chdir(saved_dir)
-            shutil.rmtree(path)
+            path = 'tempcwd'
+            saved_dir = os.getcwd()
+            os.mkdir(path)
+            try:
+                os.chdir(path)
+                wrong_dir = os.getcwd()
+                # Before calling with the correct cwd, confirm that the call fails
+                # without cwd and with the wrong cwd.
+                self.assertRaises(OSError, subprocess.Popen,
+                                  [doesntexist], executable=rel_python)
+                self.assertRaises(OSError, subprocess.Popen,
+                                  [doesntexist], executable=rel_python,
+                                  cwd=wrong_dir)
+                python_dir = self._normalize_cwd(python_dir)
+                self._assert_cwd(python_dir, doesntexist, executable=rel_python,
+                                 cwd=python_dir)
+            finally:
+                os.chdir(saved_dir)
+                shutil.rmtree(path)
 
     def test_cwd_with_absolute_arg(self):
         # Check that Popen can find the executable when the cwd is wrong
@@ -961,17 +960,22 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Timer(0.2, kill_proc_timer_thread)
         t.start()
 
+        if mswindows:
+            expected_errorcode = 1
+        else:
+            # Should be -9 because of the proc.kill() from the thread.
+            expected_errorcode = -9
+
         # Wait for the process to finish; the thread should kill it
         # long before it finishes on its own.  Supplying a timeout
         # triggers a different code path for better coverage.
         proc.wait(timeout=20)
-        # Should be -9 because of the proc.kill() from the thread.
-        self.assertEqual(proc.returncode, -9,
+        self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in wait from main thread")
 
         # This should be a no-op with no change in returncode.
         proc.wait()
-        self.assertEqual(proc.returncode, -9,
+        self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in second main wait.")
 
         t.join()
@@ -980,8 +984,8 @@ class ProcessTestCase(BaseTestCase):
         # be set by the wrong thread that doesn't actually have it
         # leading to an incorrect value.
         self.assertEqual([('thread-start-poll-result', None),
-                          ('thread-after-kill-and-wait', -9),
-                          ('thread-after-second-wait', -9)],
+                          ('thread-after-kill-and-wait', expected_errorcode),
+                          ('thread-after-second-wait', expected_errorcode)],
                          results)
 
     def test_issue8780(self):
@@ -995,24 +999,25 @@ class ProcessTestCase(BaseTestCase):
         output = subprocess.check_output([sys.executable, '-c', code])
         self.assert_(output.startswith('Hello World!'), output)
 
-    def test_communicate_eintr(self):
-        # Issue #12493: communicate() should handle EINTR
-        def handler(signum, frame):
-            pass
-        old_handler = signal.signal(signal.SIGALRM, handler)
-        self.addCleanup(signal.signal, signal.SIGALRM, old_handler)
+    if not mswindows:  # Signal tests are POSIX specific.
+        def test_communicate_eintr(self):
+            # Issue #12493: communicate() should handle EINTR
+            def handler(signum, frame):
+                pass
+            old_handler = signal.signal(signal.SIGALRM, handler)
+            self.addCleanup(signal.signal, signal.SIGALRM, old_handler)
 
-        # the process is running for 2 seconds
-        args = [sys.executable, "-c", 'import time; time.sleep(2)']
-        for stream in ('stdout', 'stderr'):
-            kw = {stream: subprocess.PIPE}
-            process = subprocess.Popen(args, **kw)
-            try:
-                signal.alarm(1)
-                # communicate() will be interrupted by SIGALRM
-                process.communicate()
-            finally:
-                process.__exit__(None, None, None)
+            # the process is running for 2 seconds
+            args = [sys.executable, "-c", 'import time; time.sleep(2)']
+            for stream in ('stdout', 'stderr'):
+                kw = {stream: subprocess.PIPE}
+                process = subprocess.Popen(args, **kw)
+                try:
+                    signal.alarm(1)
+                    # communicate() will be interrupted by SIGALRM
+                    process.communicate()
+                finally:
+                    process.__exit__(None, None, None)
 
 
     # This test is Linux-ish specific for simplicity to at least have
