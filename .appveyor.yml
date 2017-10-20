@@ -3,21 +3,8 @@ environment:
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "64"
-    - PYTHON: "C:\\Python36-x64"
-      PYTHON_VERSION: "3.6.x"
-      PYTHON_ARCH: "64"
-      # Just check that the dummy shim installs and works on 3.x.
-      test_script: |
-        cd C:\\  # We cannot be in the directory with subprocess32.py in it.
-        python -c 'import os, subprocess32, subprocess, sys; print("working directory:", os.getcwd()); print("subprocess32 module is", subprocess32); sys.exit(subprocess32 is not subprocess)'
+
 install:
-  # Install Python (from the official .msi of http://python.org) and pip when
-  # not already installed.
-  - ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
-  # Prepend newly installed Python to the PATH of this build (this cannot be
-  # done from inside the powershell script as it would require to restart
-  # the parent CMD process).
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python --version"
 
 build_script:
