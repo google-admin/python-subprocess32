@@ -207,11 +207,12 @@ class ProcessTestCase(BaseTestCase):
     def test_check_output_timeout(self):
         # check_output() function with timeout arg
         try:
+            # Sleeping to avoid busy loop in event test fails and leaves process running
             output = subprocess.check_output(
                     [sys.executable, "-c",
-                     "import sys; sys.stdout.write('BDFL')\n"
+                     "import sys, time; sys.stdout.write('BDFL')\n"
                      "sys.stdout.flush()\n"
-                     "while True: pass"],
+                     "while True: time.sleep(.01)"],
                     timeout=0.5)
         except subprocess.TimeoutExpired, exception:
             self.assertEqual(exception.output, 'BDFL')
@@ -306,7 +307,7 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
 
-    #@unittest.skipIf(mswindows, "pending resolution of issue #15533")
+    @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
         # Check that Popen looks for args[0] relative to cwd if args[0]
         # is relative.
@@ -331,7 +332,7 @@ class ProcessTestCase(BaseTestCase):
             os.chdir(saved_dir)
             shutil.rmtree(path)
 
-    #@unittest.skipIf(mswindows, "pending resolution of issue #15533")
+    @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_executable(self):
         # Check that Popen looks for executable relative to cwd if executable
         # is relative (and that executable takes precedence over args[0]).
@@ -966,13 +967,14 @@ class ProcessTestCase(BaseTestCase):
         # triggers a different code path for better coverage.
         proc.wait(timeout=20)
         # Should be -9 because of the proc.kill() from the thread.
-        self.assertEqual(proc.returncode, -9,
-                         msg="unexpected result in wait from main thread")
+        expected_returncode = -9 if not mswindows else 1
+        self.assertEqual(proc.returncode, expected_returncode,
+                         msg="unexpected result in wait from main thread, return code was {}".format(proc.returncode))
 
         # This should be a no-op with no change in returncode.
         proc.wait()
-        self.assertEqual(proc.returncode, -9,
-                         msg="unexpected result in second main wait.")
+        self.assertEqual(proc.returncode, expected_returncode,
+                         msg="unexpected result in second main wait, return code was {}".format(proc.returncode))
 
         t.join()
         # Ensure that all of the thread results are as expected.
@@ -980,8 +982,8 @@ class ProcessTestCase(BaseTestCase):
         # be set by the wrong thread that doesn't actually have it
         # leading to an incorrect value.
         self.assertEqual([('thread-start-poll-result', None),
-                          ('thread-after-kill-and-wait', -9),
-                          ('thread-after-second-wait', -9)],
+                          ('thread-after-kill-and-wait', expected_returncode),
+                          ('thread-after-second-wait', expected_returncode)],
                          results)
 
     def test_issue8780(self):
@@ -995,6 +997,7 @@ class ProcessTestCase(BaseTestCase):
         output = subprocess.check_output([sys.executable, '-c', code])
         self.assert_(output.startswith('Hello World!'), output)
 
+    @unittest.skipIf(mswindows, 'signal test cannot complete on Windows')
     def test_communicate_eintr(self):
         # Issue #12493: communicate() should handle EINTR
         def handler(signum, frame):
