@@ -13,7 +13,7 @@ matrix:
       script: python test_subprocess32.py
     - python: 3.5
       # Just check that the dummy shim installs and works on 3.x.
-      script: python -c 'import subprocess32, sys; sys.exit(subprocess32 is subprocess)'
+      script: cd "${TMPDIR}" && python -c 'import subprocess32, sys; sys.exit(subprocess32 is subprocess)'
     - os: osx
       # Travis does not have a Python runtime for MacOS.
       #  https://pythonhosted.org/CodeChat/.travis.yml.html
