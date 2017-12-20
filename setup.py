@@ -13,7 +13,7 @@ def main():
     if sys.version_info[0] == 2:  # PY2
         py_modules.append('subprocess32')
         if os.name == 'posix':
-            ext = Extension('_posixsubprocess', ['_posixsubprocess.c'],
+            ext = Extension('_posixsubprocess32', ['_posixsubprocess.c'],
                             depends=['_posixsubprocess_helpers.c'])
             ext_modules.append(ext)
     else:  # PY3

@@ -876,7 +876,7 @@ static PyMethodDef module_methods[] = {
 
 
 PyMODINIT_FUNC
-init_posixsubprocess(void)
+init_posixsubprocess32(void)
 {
     PyObject *m;
 
@@ -886,7 +886,7 @@ init_posixsubprocess(void)
         return;
 #endif
 
-    m = Py_InitModule3("_posixsubprocess", module_methods, module_doc);
+    m = Py_InitModule3("_posixsubprocess32", module_methods, module_doc);
     if (m == NULL)
         return;
 }

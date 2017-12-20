@@ -141,7 +141,7 @@ else:
     import pickle
 
     try:
-        import _posixsubprocess
+        import _posixsubprocess32 as _posixsubprocess
     except ImportError:
         _posixsubprocess = None
         import warnings

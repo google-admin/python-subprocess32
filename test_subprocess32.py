@@ -2199,7 +2199,7 @@ class ProcessTestCasePOSIXPurePython(ProcessTestCase, POSIXProcessTestCase):
         POSIXProcessTestCase.setUp(self)
 
     def tearDown(self):
-        subprocess._posixsubprocess = sys.modules['_posixsubprocess']
+        subprocess._posixsubprocess = sys.modules['_posixsubprocess32']
         POSIXProcessTestCase.tearDown(self)
         ProcessTestCase.tearDown(self)
 
