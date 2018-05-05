@@ -175,6 +175,35 @@ safe_get_max_fd(void)
     return local_max_fd;
 }
 
+/* While uncommon in Python 2 applications, this makes sure the
+ * close on exec flag is unset on the subprocess32.Popen pass_fds.
+ * https://github.com/google/python-subprocess32/issues/4.
+ */
+static void
+_unset_cloexec_on_fds(PyObject *py_fds_to_keep, int errpipe_write)
+{
+#ifdef FD_CLOEXEC
+    Py_ssize_t num_fds_to_keep = PySequence_Length(py_fds_to_keep);
+    Py_ssize_t keep_seq_idx;
+    /* As py_fds_to_keep is sorted we can loop through the list closing
+     * fds inbetween any in the keep list falling within our range. */
+    for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
+        PyObject* py_keep_fd = PySequence_Fast_GET_ITEM(py_fds_to_keep,
+                                                        keep_seq_idx);
+        // We just keep going on errors below, there is nothing we can
+        // usefully do to report them.  This is best effort.
+        long fd = PyLong_AsLong(py_keep_fd);
+        if (fd < 0) continue;
+        if (fd == errpipe_write) continue;  // This one keeps its CLOEXEC.
+        // We could use ioctl FIONCLEX, but that is a more modern API
+        // not available everywhere and we are a single threaded child.
+        int old_flags = fcntl(fd, F_GETFD);
+        if (old_flags != -1) {
+            fcntl(fd, F_SETFD, old_flags & ~FD_CLOEXEC);
+        }
+    }
+#endif
+}
 
 /* Close all file descriptors in the range from start_fd and higher
  * except for those in py_fds_to_keep.  If the range defined by
@@ -475,6 +504,7 @@ child_exec(char *const exec_array[],
         /* Py_DECREF(result); - We're about to exec so why bother? */
     }
 
+    _unset_cloexec_on_fds(py_fds_to_keep, errpipe_write);
     if (close_fds) {
         /* TODO HP-UX could use pstat_getproc() if anyone cares about it. */
         _close_open_fds(3, py_fds_to_keep);

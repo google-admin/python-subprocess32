@@ -11,11 +11,6 @@ PYTHON=python3
 (cd build && PYTHONPATH=lib "$PYTHON" -c \
   "import subprocess as s, subprocess32 as s32; assert s is s32, (s, s32)")
 
-PYTHON="../Python-2.4.6/python"
-"$PYTHON" -V
-"$PYTHON" setup.py build
-LANG=C PYTHONPATH=build/lib.linux-x86_64-2.4 "$PYTHON" test_subprocess32.py
-
 PYTHON=python2
 "$PYTHON" -V
 "$PYTHON" setup.py build

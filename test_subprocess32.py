@@ -2236,6 +2236,30 @@ class POSIXSubprocessModuleTestCase(unittest.TestCase):
             if not gc_enabled:
                 gc.disable()
 
+    def test_cloexec_pass_fds(self):
+        if not os.path.exists('/dev/null') or not os.path.isdir('/dev/fd'):
+            print("Skipped - This test requires /dev/null and /dev/fd/*.")
+            return
+        null_reader_proc = subprocess.Popen(
+                ["cat"],
+                stdin=open('/dev/null', 'rb'),
+                stdout=subprocess.PIPE)
+        try:
+            data = null_reader_proc.stdout
+            fd_name = '/dev/fd/%d' % data.fileno()
+            fd_reader_proc = subprocess.Popen(
+                    ["cat", fd_name],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,  # Capture any error from cat.
+                    pass_fds=(data.fileno(),))
+            try:
+                fddata = fd_reader_proc.stdout
+                self.assertEqual('', fddata.read())
+            finally:
+                fd_reader_proc.wait()
+        finally:
+          null_reader_proc.wait()
+
 
 if not getattr(subprocess, '_posixsubprocess', False):
     print >>sys.stderr, "_posixsubprocess extension module not found."

@@ -5,6 +5,8 @@
 * Fixed the packaging problem where the stdlib python3_redirect shim is
   supposed to be installed on Python 3.
 * Renamed _posixsubprocess to _posixsubprocess32 for consistency.
+* Unset CLOEXEC on file descriptors given to Popen pass_fds. (GH #4)
+* Drop support for Python 2.4 and 2.5.
 
 -----------------
 2017-10-18 3.5.0rc1
