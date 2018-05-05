@@ -1,4 +1,9 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
+
+/* Needed to enable CLOEXEC support on OSes with ancient defaults. */
+#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 700
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #if defined(__linux__) && !defined(HAVE_PIPE2)
