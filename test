@@ -2,6 +2,12 @@
 
 # This is for my own convenience, edit it for your own environment.
 
+PYTHON=python2
+"$PYTHON" -V
+"$PYTHON" setup.py build
+export PYTHONPATH=build/lib.linux-x86_64-2.7
+exec "$PYTHON" test_subprocess32.py
+
 PYTHON=python3
 rm -r vvv dist
 mkdir vvv
@@ -19,8 +25,3 @@ PIP=vvv/bin/pip
 (cd $(dirname "$PYTHON") && \
  ./python3 -c "import subprocess as s, subprocess32 as s32; assert s is s32, (s, s32)")
 
-PYTHON=python2
-"$PYTHON" -V
-"$PYTHON" setup.py build
-export PYTHONPATH=build/lib.linux-x86_64-2.7
-exec "$PYTHON" test_subprocess32.py
