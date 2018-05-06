@@ -1,24 +1,14 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
 
-/* Needed to enable CLOEXEC support on OSes with ancient defaults. */
-#define _POSIX_C_SOURCE 200809L
-#define _XOPEN_SOURCE 700
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#if defined(__linux__) && !defined(HAVE_PIPE2)
-# define HAVE_PIPE2 1  /* From 3.2's configure script, undef if you don't. */
-#endif
-#if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
-# define _GNU_SOURCE
-#endif
+
+/* We use our own small autoconf to fill in for things that were
+ * not checked for in Python 2's configure and thus pyconfig.h. */
+#include "_posixsubprocess_config.h"
+
 #include <unistd.h>
 #include <fcntl.h>
-#ifdef __linux__
-# define HAVE_SYS_TYPES_H 1  /* From 3.2's configure script, undef if reqd. */
-# define HAVE_SYS_SYSCALL_H 1  /* From 3.2's configure script, undef if reqd. */
-# define HAVE_SYS_DIRENT_H 1  /* From 3.2's configure script, undef if reqd. */
-#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -31,6 +21,8 @@
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
+
+/* TODO: Some platform conditions below could move into configure.ac. */
 
 #if defined(__ANDROID__) && !defined(SYS_getdents64)
 /* Android doesn't expose syscalls, add the definition manually. */

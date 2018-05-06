@@ -1,14 +1,17 @@
 include *.md
-include LICENSE*
+include LICENSE
 include setup.py
 include setup.cfg
 include ChangeLog
 include MANIFEST.in
 
-include *.c *.h *.py
+include configure.ac configure *.h.in
+
+include *.c *.py
 include testdata/*
 include python3_redirect/*
 
 prune build
 prune dist
-prune .hg*
+prune config.*
+prune *.pyc
