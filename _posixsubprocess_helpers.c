@@ -161,3 +161,59 @@ _Py_RestoreSignals(void)
     PyOS_setsig(SIGXFSZ, SIG_DFL);
 #endif
 }
+
+
+static int
+set_inheritable(int fd, int inheritable)
+{
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+    static int ioctl_works = -1;
+    int request;
+    int err;
+#endif
+    int flags;
+    int res;
+
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+    if (ioctl_works != 0) {
+        /* fast-path: ioctl() only requires one syscall */
+        if (inheritable)
+            request = FIONCLEX;
+        else
+            request = FIOCLEX;
+        err = ioctl(fd, request, NULL);
+        if (!err) {
+            ioctl_works = 1;
+            return 0;
+        }
+
+        if (errno != ENOTTY) {
+            return -1;
+        }
+        else {
+            /* Issue #22258: Here, ENOTTY means "Inappropriate ioctl for
+               device". The ioctl is declared but not supported by the kernel.
+               Remember that ioctl() doesn't work. It is the case on
+               Illumos-based OS for example. */
+            ioctl_works = 0;
+        }
+        /* fallback to fcntl() if ioctl() does not work */
+    }
+#endif
+
+    /* slow-path: fcntl() requires two syscalls */
+    flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        return -1;
+    }
+
+    if (inheritable)
+        flags &= ~FD_CLOEXEC;
+    else
+        flags |= FD_CLOEXEC;
+    res = fcntl(fd, F_SETFD, flags);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+}

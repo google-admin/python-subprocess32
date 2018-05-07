@@ -159,6 +159,29 @@ _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
     return 0;
 }
 
+static int
+make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
+{
+    Py_ssize_t i, len;
+
+    len = PySequence_Length(py_fds_to_keep);
+    for (i = 0; i < len; ++i) {
+        PyObject* fdobj = PySequence_Fast_GET_ITEM(py_fds_to_keep, i);
+        long fd = PyLong_AsLong(fdobj);
+        assert(!PyErr_Occurred());
+        assert(0 <= fd && fd <= INT_MAX);
+        if (fd == errpipe_write) {
+            /* errpipe_write is part of py_fds_to_keep. It must be closed at
+               exec(), but kept open in the child process until exec() is
+               called. */
+            continue;
+        }
+        if (set_inheritable((int) fd, 1) < 0)
+            return -1;
+    }
+    return 0;
+}
+
 
 /* Get the maximum file descriptor that could be opened by this process.
  * This function is async signal safe for use between fork() and exec().
@@ -424,6 +447,9 @@ child_exec(char *const exec_array[],
     const char* err_msg = "";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
     char hex_errno[sizeof(saved_errno)*2+1];
+
+    if (make_inheritable(py_fds_to_keep, errpipe_write) < 0)
+        goto error;
 
     /* Close parent's pipe ends. */
     if (p2cwrite != -1) {

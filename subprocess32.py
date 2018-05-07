@@ -1302,6 +1302,8 @@ class Popen(object):
                                         fds_to_keep.add(errpipe_write)
                                         self._close_all_but_a_sorted_few_fds(
                                                 sorted(fds_to_keep))
+                                        for fd in fds_to_keep:
+                                            _set_cloexec(fd, False)
                                     else:
                                         self._close_fds(but=errpipe_write)
 
