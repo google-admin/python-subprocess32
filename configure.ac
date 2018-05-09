@@ -137,8 +137,8 @@ fi
 ######## The stuff we _actually_ want to care about. ########
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS(unistd.h fcntl.h dirent.h \
-                 sys/types.h sys/stat.h sys/syscall.h)
+AC_CHECK_HEADERS(unistd.h fcntl.h \
+                 sys/cdefs.h sys/types.h sys/stat.h sys/syscall.h)
 AC_HEADER_DIRENT
 
 AC_CHECK_FUNCS(pipe2 setsid)

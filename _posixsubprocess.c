@@ -1,11 +1,19 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
 
+/* We use our own small autoconf to fill in for things that were not checked
+ * for in Python 2's configure and thus pyconfig.h.
+ *
+ * This comes before Python.h on purpose.  2.7's Python.h redefines critical
+ * defines such as _POSIX_C_SOURCE with undesirable old values impacting system
+ * which header defines are available.
+ */
+#include "_posixsubprocess_config.h"
+#ifdef HAVE_SYS_CDEFS_H
+#include <sys/cdefs.h>
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-
-/* We use our own small autoconf to fill in for things that were
- * not checked for in Python 2's configure and thus pyconfig.h. */
-#include "_posixsubprocess_config.h"
 
 #include <unistd.h>
 #include <fcntl.h>
