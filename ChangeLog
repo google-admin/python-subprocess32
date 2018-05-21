@@ -1,4 +1,10 @@
 -----------------
+2018-05-21 3.5.1
+-----------------
+* Fix AttributeError: 'module' object has no attribute 'Signals' when
+  constructing a CalledProcessError exception.  [#49]
+
+-----------------
 2018-05-13 3.5.0 (3.5.0rc3)
 -----------------
 
