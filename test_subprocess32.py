@@ -1247,9 +1247,8 @@ class POSIXProcessTestCase(BaseTestCase):
 
     #@unittest.skipIf(not os.path.exists('/proc/self/status'))
     def test_restore_signals(self):
-        if (not os.path.exists('/proc/self/status') and
-            ('SigIgn' not in open('/proc/self/status', 'r').read())):
-            print("SKIP - Functional test requires a Linux /proc/self/status.")
+        if not os.path.exists('/proc/self/status'):
+            print("SKIP - Functional test requires /proc/self/status.")
             return
         default_proc_status = subprocess.check_output(
                 ['cat', '/proc/self/status'],
