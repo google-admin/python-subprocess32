@@ -1245,12 +1245,31 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
+    #@unittest.skipIf(not os.path.exists('/proc/self/status'))
     def test_restore_signals(self):
-        # Code coverage for both values of restore_signals to make sure it
-        # at least does not blow up.
-        # A test for behavior would be complex.  Contributions welcome.
-        subprocess.call([sys.executable, "-c", ""], restore_signals=True)
-        subprocess.call([sys.executable, "-c", ""], restore_signals=False)
+        if (not os.path.exists('/proc/self/status') and
+            ('SigIgn' not in open('/proc/self/status', 'r').read())):
+            print("SKIP - Functional test requires a Linux /proc/self/status.")
+            return
+        default_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=False)
+        restored_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=True)
+        for line in default_proc_status.splitlines():
+            if not line.startswith('SigIgn'):
+                continue
+            default_sig_ign_mask = line
+            break
+        else:
+            self.skipTest("SigIgn not found in /proc/self/status.")
+        for line in restored_proc_status.splitlines():
+            if not line.startswith('SigIgn'):
+                continue
+            restored_sig_ign_mask = line
+            break
+        self.assertNotEqual(default_sig_ign_mask, restored_sig_ign_mask)
 
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
@@ -2258,7 +2277,7 @@ class POSIXSubprocessModuleTestCase(unittest.TestCase):
             finally:
                 fd_reader_proc.wait()
         finally:
-          null_reader_proc.wait()
+            null_reader_proc.wait()
 
 
 if not getattr(subprocess, '_posixsubprocess', False):

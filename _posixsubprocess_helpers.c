@@ -2,6 +2,12 @@
    This file is #included by _posixsubprocess.c and the functions
    are declared static to avoid exposing them outside this module. */
 
+/* _posixsubprocess_config.h was already included by _posixsubprocess.c
+ * which is #include'ing us despite the .c name.  HAVE_SIGNAL_H comes
+ * from there.  Yes, confusing! */
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 #include "unicodeobject.h"
 
 #if (PY_VERSION_HEX < 0x02050000)
