@@ -1253,21 +1253,20 @@ class POSIXProcessTestCase(BaseTestCase):
         default_proc_status = subprocess.check_output(
                 ['cat', '/proc/self/status'],
                 restore_signals=False)
+        for line in default_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                default_sig_ign_mask = line
+                break
+        else:
+            self.skipTest("SigIgn not found in /proc/self/status.")
         restored_proc_status = subprocess.check_output(
                 ['cat', '/proc/self/status'],
                 restore_signals=True)
-        for line in default_proc_status.splitlines():
-            if not line.startswith('SigIgn'):
-                continue
-            default_sig_ign_mask = line
-            break
-        else:
-            self.skipTest("SigIgn not found in /proc/self/status.")
         for line in restored_proc_status.splitlines():
-            if not line.startswith('SigIgn'):
-                continue
-            restored_sig_ign_mask = line
-            break
+            if line.startswith(b'SigIgn'):
+                restored_sig_ign_mask = line
+                break
+        # restore_signals=True should've unblocked SIGPIPE and friends.
         self.assertNotEqual(default_sig_ign_mask, restored_sig_ign_mask)
 
     def test_start_new_session(self):

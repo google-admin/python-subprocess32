@@ -1,7 +1,10 @@
 -----------------
 2018-06-04 3.5.2 (not yet released)
 -----------------
-* Fixed: restore_signals=True was a no-op due to a missing #include.
+* Explicitly include <signal.h> in _posixsubprocess_helpers.c; it already
+  gets configure checked and pulled in via Python's own <Python.h> but it
+  is better to be explicit.  #IWYU
+* Adds a functional test for restore_signals=True behavior.
 
 -----------------
 2018-05-21 3.5.1
