@@ -1250,6 +1250,7 @@ class POSIXProcessTestCase(BaseTestCase):
         if not os.path.exists('/proc/self/status'):
             print("SKIP - Functional test requires /proc/self/status.")
             return
+        # Blindly assume that cat exists on systems with /proc/self/status...
         default_proc_status = subprocess.check_output(
                 ['cat', '/proc/self/status'],
                 restore_signals=False)
