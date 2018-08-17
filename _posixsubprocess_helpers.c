@@ -8,6 +8,7 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#include <stdint.h>
 #include "unicodeobject.h"
 
 #if (PY_VERSION_HEX < 0x02050000)
@@ -116,7 +117,14 @@ _PySequence_BytesToCharpArray(PyObject* self)
     if (argc == -1)
         return NULL;
 
-    array = malloc((argc + 1) * sizeof(char *));
+    if ((argc + 1) > SIZE_MAX / sizeof(char *)) {
+        PyErr_SetNone(PyExc_OverflowError);
+        return NULL;
+    }
+    else {
+        array = malloc((argc + 1) * sizeof(char *));
+    }
+
     if (array == NULL) {
         PyErr_NoMemory();
         return NULL;
