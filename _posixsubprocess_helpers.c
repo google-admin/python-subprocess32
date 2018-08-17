@@ -116,7 +116,7 @@ _PySequence_BytesToCharpArray(PyObject* self)
     if (argc == -1)
         return NULL;
     /* Avoid 32-bit overflows to malloc() from unreasonable values. */
-    if (argc > 0x20000000) {
+    if (argc > 0x10000000) {
         PyErr_NoMemory();
         return NULL;
     }
