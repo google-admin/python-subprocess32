@@ -1,4 +1,9 @@
 -----------------
+????-MM-DD 3.5.?
+-----------------
+* Disallow rediculiously large numbers (millions) of arguments.  [#54]
+
+-----------------
 2018-06-07 3.5.2
 -----------------
 * Explicitly include <signal.h> in _posixsubprocess_helpers.c; it already
