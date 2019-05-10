@@ -682,6 +682,10 @@ class Popen(object):
             self._devnull = os.open(os.devnull, os.O_RDWR)
         return self._devnull
 
+    def _stdin_write(self, input):
+        if input:
+            self.stdin.write(input)
+        self.stdin.close()
 
     def communicate(self, input=None, timeout=None):
         """Interact with process: Send data to stdin.  Read data from
@@ -708,9 +712,7 @@ class Popen(object):
             stdout = None
             stderr = None
             if self.stdin:
-                if input:
-                    self.stdin.write(input)
-                self.stdin.close()
+                self._stdin_write(input)
             elif self.stdout:
                 stdout = _eintr_retry_call(self.stdout.read)
                 self.stdout.close()
