@@ -684,8 +684,22 @@ class Popen(object):
 
     def _stdin_write(self, input):
         if input:
-            self.stdin.write(input)
-        self.stdin.close()
+            try:
+                self.stdin.write(input)
+            except EnvironmentError as e:
+                if e.errno == errno.EPIPE:
+                    # communicate() must ignore broken pipe error
+                    pass
+                else:
+                    raise
+
+        try:
+            self.stdin.close()
+        except EnvironmentError as e:
+            if e.errno == errno.EPIPE:
+                pass
+            else:
+                raise
 
     def communicate(self, input=None, timeout=None):
         """Interact with process: Send data to stdin.  Read data from
@@ -985,9 +999,7 @@ class Popen(object):
                 self.stderr_thread.start()
 
             if self.stdin:
-                if input is not None:
-                    self.stdin.write(input)
-                self.stdin.close()
+                self._stdin_write(input)
 
             # Wait for the reader threads, or time out.  If we time out, the
             # threads remain reading and the fds left open in case the user
