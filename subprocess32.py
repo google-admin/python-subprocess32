@@ -41,6 +41,7 @@ import sys
 mswindows = (sys.platform == "win32")
 
 import os
+import errno
 import exceptions
 import types
 import time
@@ -132,7 +133,6 @@ if mswindows:
 else:
     import select
     _has_poll = hasattr(select, 'poll')
-    import errno
     import fcntl
     import pickle
 
