@@ -690,13 +690,18 @@ class Popen(object):
                 if e.errno == errno.EPIPE:
                     # communicate() must ignore broken pipe error
                     pass
+                elif e.errno == errno.EINVAL :
+                    # bpo-19612, bpo-30418: On Windows, stdin.write() fails
+                    # with EINVAL if the child process exited or if the child
+                    # process is still running but closed the pipe.
+                    pass
                 else:
                     raise
 
         try:
             self.stdin.close()
         except EnvironmentError as e:
-            if e.errno == errno.EPIPE:
+            if e.errno in (errno.EPIPE, errno.EINVAL):
                 pass
             else:
                 raise
