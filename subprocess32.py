@@ -1695,11 +1695,19 @@ class Popen(object):
                 if self.stdin in wlist:
                     chunk = self._input[self._input_offset :
                                         self._input_offset + _PIPE_BUF]
-                    bytes_written = os.write(self.stdin.fileno(), chunk)
-                    self._input_offset += bytes_written
-                    if self._input_offset >= len(self._input):
-                        self.stdin.close()
-                        self._write_set.remove(self.stdin)
+                    try:
+                        bytes_written = os.write(self.stdin.fileno(), chunk)
+                    except EnvironmentError as e:
+                        if e.errno == errno.EPIPE:
+                            self._write_set.remove(self.stdin)
+                            self.stdin.close()
+                        else:
+                            raise
+                    else:
+                        self._input_offset += bytes_written
+                        if self._input_offset >= len(self._input):
+                            self.stdin.close()
+                            self._write_set.remove(self.stdin)
 
                 if self.stdout in rlist:
                     data = os.read(self.stdout.fileno(), 1024)
