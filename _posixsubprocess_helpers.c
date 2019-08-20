@@ -45,6 +45,7 @@ static PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
    system encoding.  The addr param must be a PyObject**.
    This is designed to be used with "O&" in PyArg_Parse APIs. */
 
+#if (PY_VERSION_HEX < 0x02080000)
 static int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
 {
@@ -83,6 +84,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     *(PyObject**)addr = output;
     return Py_CLEANUP_SUPPORTED;
 }
+#endif
 
 
 /* Free's a NULL terminated char** array of C strings. */
